@@ -1,0 +1,11 @@
+{
+  "name": "wechaty-chatgpt",
+  "version": "0.0.0",
+  "description": "A Wechaty chatGPT plugin",
+  "keywords": ["wechaty", "chatgpt"],
+  "author": "Jack Lu <jacklu@jacklu.me>",
+  "license": "ISC",
+  "peerDependencies": {
+    "wechaty": "^0.60.10"
+  }
+}
