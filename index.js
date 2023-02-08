@@ -7,10 +7,13 @@
 /** @typedef {{ contact: ContactQueryFilter } | { room: RoomQueryFilter }} SayableQueryFilter */
 
 /**
- * @param {Object} config
- * @param {RoomQueryFilter[]} [config.filter] the filter of rooms to enable this plugin
- * @param {string} config.apiKey the api key
- * @param {string} config.prompt the prompt, which is the leading characters that indicates that a message is sent to chatGPT, e.g. `"@chatGPT "`
+ * @typedef {Object} Config
+ * @property {string} apiKey - the api key
+ * @property {string} prompt - the prompt, which is the leading characters that indicates that a message is sent to chatGPT, e.g. `"@chatGPT "`
+ */
+
+/**
+ * @param {(conversation: Sayable) => Promise<Config | undefined>} config conversation-wise config, where `undefined` will not enable chatGPT
  */
 module.exports = function WechatyChatgptPlugin(config) {
 	return function (/** @type {Wechaty} */bot) {
@@ -22,22 +25,13 @@ module.exports = function WechatyChatgptPlugin(config) {
 		};
 		async function listener(/** @type {Message} */message) {
 			var conversation = messageConversation(message);
-			if (
-				message.text().startsWith(config.prompt) && (
-					!config.filter || (
-						await Promise.all(
-							config.filter.map(
-								filter => sayableQueryFilterFactory(filter)(conversation)
-							)
-						)
-					).some(Boolean)
-				)
-			) {
-				var request = message.text().substr(config.prompt.length);
+			var conversationConfig = await config(conversation);
+			if (conversationConfig && message.text().startsWith(conversationConfig.prompt)) {
+				var request = message.text().substr(conversationConfig.prompt.length);
 				if (!session[conversation.id]) {
 					session[conversation.id] = {};
 					var { ChatGPTAPI } = await import('chatgpt');
-					session[conversation.id].api = new ChatGPTAPI({ apiKey: config.apiKey });
+					session[conversation.id].api = new ChatGPTAPI({ apiKey: conversationConfig.apiKey });
 				}
 				try {
 					session[conversation.id].response = await session[conversation.id].api.sendMessage(request, {
@@ -51,19 +45,6 @@ module.exports = function WechatyChatgptPlugin(config) {
 					conversation.say("请求失败。chatGPT服务目前不稳定，请稍候重试。");
 				}
 			}
-		}
-		function sayableQueryFilterFactory(/** @type {SayableQueryFilter} */filter) {
-			return async function (/** @type {Sayable} */sayable) {
-				if (filter.contact)
-					return bot.puppet.contactQueryFilterFactory(filter.contact)(
-						await bot.puppet.contactPayload(sayable.id)
-					);
-				if (filter.room)
-					return bot.puppet.roomQueryFilterFactory(filter.room)(
-						await bot.puppet.roomPayload(sayable.id)
-					);
-				return false;
-			};
 		}
 		function messageConversation(/** @type {Message} */message) {
 			return message.talker().self() ?
