@@ -8,7 +8,7 @@
 
 /**
  * @typedef {Object} Config
- * @property {string} apiKey - the api key
+ * @property {ConstructorParameters<typeof import("chatgpt").ChatGPTAPI>[0]} apiOptions - the api options that is passed to `ChatGPTAPI` constructor
  * @property {string | RegExp} prompt - the prompt, which is the leading characters that indicates that a message is sent to chatGPT, e.g. `"@chatGPT "`
  * 
  * When it's `RegExp`, it only specifies the leading characters to be matched, not the whole text. e.g. `/@chatGPT(\u2005|  )/`, not `/^@chatGPT(\u2005|  )(.*)/`.
@@ -33,7 +33,7 @@ module.exports = function WechatyChatgptPlugin(config) {
 				if (!session[conversation.id]) {
 					session[conversation.id] = {};
 					var { ChatGPTAPI } = await import('chatgpt');
-					session[conversation.id].api = new ChatGPTAPI({ apiKey: conversationConfig.apiKey });
+					session[conversation.id].api = new ChatGPTAPI(conversationConfig.apiOptions);
 				}
 				try {
 					session[conversation.id].response = await session[conversation.id].api.sendMessage(request, {
