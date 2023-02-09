@@ -9,7 +9,9 @@
 /**
  * @typedef {Object} Config
  * @property {string} apiKey - the api key
- * @property {string} prompt - the prompt, which is the leading characters that indicates that a message is sent to chatGPT, e.g. `"@chatGPT "`
+ * @property {string | RegExp} prompt - the prompt, which is the leading characters that indicates that a message is sent to chatGPT, e.g. `"@chatGPT "`
+ * 
+ * When it's `RegExp`, it only specifies the leading characters to be matched, not the whole text. e.g. `/@chatGPT(\u2005|  )/`, not `/^@chatGPT(\u2005|  )(.*)/`.
  */
 
 /**
@@ -26,8 +28,8 @@ module.exports = function WechatyChatgptPlugin(config) {
 		async function listener(/** @type {Message} */message) {
 			var conversation = messageConversation(message);
 			var conversationConfig = await config(conversation);
-			if (conversationConfig && message.text().startsWith(conversationConfig.prompt)) {
-				var request = message.text().substr(conversationConfig.prompt.length);
+			var request;
+			if (conversationConfig && (request = matchText(message.text(), conversationConfig.prompt))) {
 				if (!session[conversation.id]) {
 					session[conversation.id] = {};
 					var { ChatGPTAPI } = await import('chatgpt');
@@ -43,6 +45,20 @@ module.exports = function WechatyChatgptPlugin(config) {
 				}
 				catch (e) {
 					conversation.say("请求失败。chatGPT服务目前不稳定，请稍候重试。");
+				}
+			}
+			/**
+			 * @param {string} text
+			 * @param {string | RegExp} prompt
+			 */
+			function matchText(text, prompt) {
+				if (typeof prompt == 'string') {
+					if (text.startsWith(prompt))
+						return text.substr(prompt.length);
+				} else if (prompt instanceof RegExp) {
+					var match = prompt.exec(text);
+					if (match && !match.index)
+						return text.substr(match[0].length);
 				}
 			}
 		}
