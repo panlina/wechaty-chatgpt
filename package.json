@@ -9,6 +9,6 @@
     "wechaty": "^0.60.10"
   },
   "dependencies": {
-    "chatgpt": "^4.1.1"
+    "chatgpt": "^5.0.4"
   }
 }
