@@ -37,7 +37,7 @@ module.exports = function WechatyChatgptPlugin(config) {
 				}
 				try {
 					session[conversation.id].response = await session[conversation.id].api.sendMessage(request, {
-						systemMessage: `你是ChatGPT，一个OpenAI训练的大语言模型。回答每个问题的时候尽量简洁（不要太啰嗦）。尽量简洁很重要，一定要记住。`,
+						systemMessage: `你是ChatGPT，一个OpenAI训练的大语言模型。`,
 						conversationId: session[conversation.id].response?.conversationId,
 						parentMessageId: session[conversation.id].response?.id
 					});
