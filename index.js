@@ -33,11 +33,10 @@ module.exports = function WechatyChatgptPlugin(config) {
 				if (!session[conversation.id]) {
 					session[conversation.id] = {};
 					var { ChatGPTAPI } = await import('chatgpt');
-					session[conversation.id].api = new ChatGPTAPI(conversationConfig.apiOptions);
+					session[conversation.id].api = new ChatGPTAPI({ systemMessage: `你是ChatGPT，一个OpenAI训练的大语言模型。`, ...conversationConfig.apiOptions });
 				}
 				try {
 					session[conversation.id].response = await session[conversation.id].api.sendMessage(request, {
-						systemMessage: `你是ChatGPT，一个OpenAI训练的大语言模型。`,
 						conversationId: session[conversation.id].response?.conversationId,
 						parentMessageId: session[conversation.id].response?.id
 					});
