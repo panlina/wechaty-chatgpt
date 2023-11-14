@@ -43,7 +43,7 @@ module.exports = function WechatyChatgptPlugin(config) {
 					conversation.say(session[conversation.id].response.text);
 				}
 				catch (e) {
-					conversation.say("请求失败。chatGPT服务目前不稳定，请稍候重试。");
+					conversation.say("请求失败。");
 				}
 			}
 			/**
