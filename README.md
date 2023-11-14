@@ -17,7 +17,8 @@ bot.use(
 		else
 			return;
 		return {
-			apiOptions: { apiKey: "(your-api-key)" },
+			clientOptions: { apiKey: "(your-api-key)" },
+			chatCompletionOptions: { model: 'gpt-3.5-turbo' },
 			prompt: prompt
 		};
 	})

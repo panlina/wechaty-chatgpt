@@ -8,18 +8,22 @@
 
 /**
  * @typedef {Object} Config
- * @property {ConstructorParameters<typeof import("chatgpt").ChatGPTAPI>[0]} apiOptions - the api options that is passed to `ChatGPTAPI` constructor
+ * @property {import("openai").ClientOptions} clientOptions - the options that is passed to `OpenAI` constructor
+ * @property {Omit<import("openai").OpenAI.Chat.ChatCompletionCreateParamsNonStreaming, 'n' | 'messages'>} chatCompletionOptions - the options that is passed to chat completion API
+ * @property {string} [systemMessage] - the system message
  * @property {string | RegExp} prompt - the prompt, which is the leading characters that indicates that a message is sent to chatGPT, e.g. `"@chatGPT "`
  * 
  * When it's `RegExp`, it only specifies the leading characters to be matched, not the whole text. e.g. `/@chatGPT(\u2005|  )/`, not `/^@chatGPT(\u2005|  )(.*)/`.
  */
+
+var { default: OpenAI } = require('openai');
 
 /**
  * @param {(conversation: Sayable) => Promise<Config | undefined>} config conversation-wise config, where `undefined` will not enable chatGPT
  */
 module.exports = function WechatyChatgptPlugin(config) {
 	return function (/** @type {Wechaty} */bot) {
-		/** @type {{ [conversation: string]: { api: import("chatgpt").ChatGPTAPI, response: import("chatgpt").ChatMessage} }} */
+		/** @type {{ [conversation: string]: { api: import("openai").OpenAI, messages: import("openai").OpenAI.ChatCompletionMessageParam[] } }} */
 		var session = {};
 		bot.on("message", listener);
 		return () => {
@@ -32,17 +36,20 @@ module.exports = function WechatyChatgptPlugin(config) {
 			if (conversationConfig && (request = matchText(message.text(), conversationConfig.prompt))) {
 				if (!session[conversation.id]) {
 					session[conversation.id] = {};
-					var { ChatGPTAPI } = await import('chatgpt');
-					session[conversation.id].api = new ChatGPTAPI({ systemMessage: `你是ChatGPT，一个OpenAI训练的大语言模型。`, ...conversationConfig.apiOptions });
+					session[conversation.id].api = new OpenAI(conversationConfig.clientOptions);
+					session[conversation.id].messages = [{ role: 'system', content: conversationConfig.systemMessage || `你是ChatGPT，一个OpenAI训练的大语言模型。` }];
 				}
 				try {
-					session[conversation.id].response = await session[conversation.id].api.sendMessage(request, {
-						conversationId: session[conversation.id].response?.conversationId,
-						parentMessageId: session[conversation.id].response?.id
+					session[conversation.id].messages.push({ role: 'user', content: request });
+					var response = await session[conversation.id].api.chat.completions.create({
+						messages: session[conversation.id].messages,
+						...conversationConfig.chatCompletionOptions
 					});
-					conversation.say(session[conversation.id].response.text);
+					session[conversation.id].messages.push(response.choices[0].message);
+					conversation.say(response.choices[0].message.content);
 				}
 				catch (e) {
+					session[conversation.id].messages.pop();
 					conversation.say("请求失败。");
 				}
 			}
