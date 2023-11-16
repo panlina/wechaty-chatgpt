@@ -11,6 +11,7 @@
  * @property {import("openai").ClientOptions} clientOptions - the options that is passed to `OpenAI` constructor
  * @property {Omit<import("openai").OpenAI.Chat.ChatCompletionCreateParamsNonStreaming, 'n' | 'messages'>} chatCompletionOptions - the options that is passed to chat completion API
  * @property {string} [systemMessage] - the system message
+ * @property {{ schema: import('openai').OpenAI.ChatCompletionCreateParams.Function, implementation: (args: any) => Promise<string> }[]} [functions]
  * @property {string | RegExp} prompt - the prompt, which is the leading characters that indicates that a message is sent to chatGPT, e.g. `"@chatGPT "`
  * 
  * When it's `RegExp`, it only specifies the leading characters to be matched, not the whole text. e.g. `/@chatGPT(\u2005|  )/`, not `/^@chatGPT(\u2005|  )(.*)/`.
@@ -38,7 +39,8 @@ module.exports = function WechatyChatgptPlugin(config) {
 					session[conversation.id] = new Session({
 						clientOptions: conversationConfig.clientOptions,
 						chatCompletionOptions: conversationConfig.chatCompletionOptions,
-						systemMessage: conversationConfig.systemMessage || `你是ChatGPT，一个OpenAI训练的大语言模型。`
+						systemMessage: conversationConfig.systemMessage || `你是ChatGPT，一个OpenAI训练的大语言模型。`,
+						functions: conversationConfig.functions
 					});
 				try {
 					var response = await session[conversation.id].send(request);
