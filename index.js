@@ -42,11 +42,18 @@ module.exports = function WechatyChatgptPlugin(config) {
 						systemMessage: conversationConfig.systemMessage || `你是ChatGPT，一个OpenAI训练的大语言模型。`,
 						functions: conversationConfig.functions
 					});
+				if (session[conversation.id].busy) {
+					conversation.say("请等上一个问题回答完再问。");
+					return;
+				}
 				try {
+					session[conversation.id].busy = true;
 					var response = await session[conversation.id].send(request);
+					session[conversation.id].busy = false;
 					conversation.say(response);
 				}
 				catch (e) {
+					session[conversation.id].busy = false;
 					conversation.say("请求失败。");
 				}
 			}
