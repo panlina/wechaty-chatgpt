@@ -54,7 +54,10 @@ module.exports = function WechatyChatgptPlugin(config) {
 				}
 				catch (e) {
 					session[conversation.id].busy = false;
-					conversation.say("请求失败。");
+					if (e.status == 429)
+						conversation.say("请求过于频繁，请稍候再试。")
+					else
+						conversation.say("请求失败。");
 				}
 			}
 			/**
