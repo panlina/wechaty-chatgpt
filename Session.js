@@ -30,9 +30,9 @@ class Session {
 				var call = { name: function_call.name, arguments: JSON.parse(function_call.arguments) };
 				this.messages.push(choice.message);
 				this.messages.push({
-					"role": "function",
-					"name": call.name,
-					"content": await this.executeFunction(call),
+					role: 'function',
+					name: call.name,
+					content: await this.executeFunction(call)
 				});
 				var response = await this.api.chat.completions.create({
 					messages: this.messages,
@@ -49,7 +49,7 @@ class Session {
 			throw e;
 		}
 	}
-	/** @param {{ name: string, arguments: any }} call  */
+	/** @param {{ name: string, arguments: any }} call */
 	executeFunction(call) {
 		var f = this.functions.find(f => f.schema.name == call.name);
 		return f.implementation(call.arguments);
