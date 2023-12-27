@@ -19,27 +19,25 @@ class Session {
 		var l = this.messages.length;
 		try {
 			this.messages.push({ role: 'user', content: message });
-			var response = await this.api.chat.completions.create({
-				messages: this.messages,
-				functions: this.functions?.length ? this.functions.map(f => f.schema) : undefined,	// avoid `[] is too short - 'functions'` error
-				...this.chatCompletionOptions
-			});
-			var choice = response.choices[0];
-			while (choice.finish_reason == 'function_call') {
-				var function_call = choice.message.function_call;
-				var call = { name: function_call.name, arguments: JSON.parse(function_call.arguments) };
-				this.messages.push(choice.message);
-				this.messages.push({
-					role: 'function',
-					name: call.name,
-					content: await this.executeFunction(call)
-				});
+			for (; ;) {
 				var response = await this.api.chat.completions.create({
 					messages: this.messages,
 					functions: this.functions?.length ? this.functions.map(f => f.schema) : undefined,	// avoid `[] is too short - 'functions'` error
 					...this.chatCompletionOptions
 				});
 				var choice = response.choices[0];
+				if (choice.finish_reason == 'function_call') {
+					var function_call = choice.message.function_call;
+					var call = { name: function_call.name, arguments: JSON.parse(function_call.arguments) };
+					this.messages.push(choice.message);
+					this.messages.push({
+						role: 'function',
+						name: call.name,
+						content: await this.executeFunction(call)
+					});
+					continue;
+				}
+				break;
 			}
 			this.messages.push(choice.message);
 			return choice.message.content;
